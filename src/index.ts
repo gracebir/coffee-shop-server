@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import productRouter from "./routers/product.route";
 import categoryRouter from "./routers/category.route";
+import userRouter from "./routers/user.route";
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ app.use(express.json());
 // endpoints
 app.use("/api/product", productRouter);
 app.use("/api/category", categoryRouter);
+
+app.use("/api/user", userRouter);
 
 const port = process.env.PORT || 4000;
 
