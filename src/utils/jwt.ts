@@ -7,6 +7,10 @@ dotenv.config();
 
 const secret_key = process.env.SECRET_KEY;
 
-export const signInJwt = (payload: object, expiresIn: number | string) => {
-    return jwt.sign(payload, secret_key!, { expiresIn });
+export const signInJwt = async (
+    payload: object,
+    expiresIn: number | string
+) => {
+    const token = await jwt.sign(payload, secret_key!, { expiresIn });
+    return token;
 };
