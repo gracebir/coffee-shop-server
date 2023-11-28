@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { loginSchema, registerSchema } from "../validations/user.validation";
 import Joi from "joi";
 import { signInJwt } from "../utils/jwt";
+import { createSession } from "../utils/session";
 
 const getUser = async (email: string) => {
     const user = await prisma.user.findUnique({
@@ -59,15 +60,34 @@ export default {
             const user = await getUser(email);
             if (!user)
                 return res.status(400).json({ message: "User does not exist" });
+
             const isMatch = await bcrypt.compare(password, user.password);
+
             if (!isMatch)
                 return res.status(400).json({ message: "Incorrect password" });
+
+            const session = createSession(user.email, user.name);
+
+            const refreshToken = await signInJwt(
+                { sessionId: session.sessionId },
+                "1y"
+            );
             const accessToken = await signInJwt(
-                { id: user.id, email: user.email },
+                {
+                    id: user.id,
+                    email: user.email,
+                    sessionId: session.sessionId,
+                },
                 "1d"
             );
+
             res.cookie("accessToken", accessToken, {
                 maxAge: 300000,
+                httpOnly: true,
+            });
+
+            res.cookie("refreshToken", refreshToken, {
+                maxAge: 3.154e10, // 1 year
                 httpOnly: true,
             });
             return res.status(200).json({
@@ -79,5 +99,36 @@ export default {
         } catch (error) {
             res.status(500).json(error);
         }
+    },
+    deleteUser: async (req: Request, res: Response) => {
+        const userId = req.params.id;
+        try {
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: parseInt(userId),
+                },
+            });
+            if (!user)
+                return res
+                    .status(400)
+                    .json({ message: "User does not exist !!!" });
+            const removedUser = await prisma.user.delete({
+                where: {
+                    email: user.email,
+                },
+            });
+            return res.status(200).json({
+                message: `${removedUser.name} deleted successfully`,
+            });
+        } catch (error) {
+            res.status(500).json(error);
+        }
+    },
+    logout: (req: Request, res: Response) => {
+        res.cookie("accessToken", "", {
+            maxAge: 0,
+            httpOnly: true,
+        });
+        return res.status(200).json({ message: "Logout successfully" });
     },
 };
