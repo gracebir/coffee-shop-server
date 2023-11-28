@@ -4,14 +4,6 @@ import { Response, Request } from "express";
 import prisma from "../utils/seed";
 import cloud from "../utils/cloudinary";
 
-interface Product {
-    id?: number;
-    name: string;
-    category: number;
-    description: string;
-    price: number;
-}
-
 export default {
     getAllProduct: async (req: Request, res: Response) => {
         try {
